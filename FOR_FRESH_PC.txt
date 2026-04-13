@@ -1,0 +1,128 @@
+========================================
+PART NUMBERS MONITORING
+For Fresh PC (No Software Installed)
+========================================
+
+READ THIS FIRST!
+
+This application is completely self-contained and requires NO programming knowledge.
+
+You only need:
+- A Windows/Mac/Linux PC
+- Internet connection
+- Podman (one small download, ~150MB)
+
+========================================
+QUICK START (3 STEPS)
+========================================
+
+1. INSTALL PODMAN
+   Windows: Go to podman.io → Download → Install → Restart
+   Mac: Open Terminal, type: brew install podman
+   Linux: sudo apt install podman
+
+2. COPY THIS FOLDER
+   Copy "part_numbers_monitoring" to your PC
+
+3. DOUBLE-CLICK: INSTALL.bat (Windows) or run in Terminal (Mac/Linux):
+   podman compose up --build
+
+Done! Open http://localhost:3000
+
+========================================
+DETAILED INSTRUCTIONS
+========================================
+
+See: INSTALL_FRESH_PC.md
+
+========================================
+WHAT GETS INSTALLED?
+========================================
+
+- Podman (container system) - ~150MB
+- Python backend (auto-downloaded) - ~200MB
+- React frontend (auto-downloaded) - ~100MB
+- Your data (grows with use) - ~1-10MB
+
+Total: ~500MB on first setup
+
+========================================
+FILES YOU'LL NEED
+========================================
+
+INSTALL.bat       ← Double-click to start (Windows)
+start.sh          ← Run to start (Mac/Linux)
+docker-compose.yml ← Configuration (don't touch)
+INSTALL_FRESH_PC.md ← Detailed guide
+QUICK_DOCKER_START.md ← Quick reference
+DOCKER_SETUP.md ← Advanced setup
+
+========================================
+AFTER STARTING
+========================================
+
+1. Open browser: http://localhost:3000
+2. Select a user: Simos, Lenia, or Dimitris
+3. Start adding parts!
+
+Admin panel:
+- Go to: http://localhost:3000/admin
+- Password: 123
+
+========================================
+STOPPING THE APP
+========================================
+
+Windows: Press Ctrl+C in the command window
+Mac/Linux: Press Ctrl+C in Terminal
+
+========================================
+WHAT'S INSIDE?
+========================================
+
+- Track part numbers not in company inventory
+- Log who requested each part (client name)
+- Record quantity, where used, urgency (1-5)
+- Compare prices across suppliers:
+  * 4 in-country suppliers (Category A)
+  * 3 web/import suppliers (Category B)
+- Full activity log of all actions
+- Admin panel to manage suppliers
+
+========================================
+DATABASE
+========================================
+
+Your data is stored safely in a Podman volume.
+It persists between app restarts.
+No data is lost if you close the app.
+
+To backup: See DOCKER_SETUP.md
+
+========================================
+HELP
+========================================
+
+"Podman not found" error?
+- Podman isn't installed
+- Go to podman.io and install it
+- Restart your computer
+
+"Ports already in use" error?
+- Edit docker-compose.yml
+- Change 3000:3000 to 3001:3000
+- Open http://localhost:3001
+
+Still stuck?
+- Read INSTALL_FRESH_PC.md for detailed troubleshooting
+- Check: podman compose logs -f
+
+========================================
+YOU'RE READY!
+========================================
+
+Just need Podman. That's it.
+
+Questions? Read the .md files in this folder.
+
+Enjoy! 🚀
