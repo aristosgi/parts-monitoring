@@ -66,10 +66,10 @@ echo ============================================
 echo.
 
 REM Start backend in new window
-start "Part Monitoring Backend" cmd /k "cd backend && venv\Scripts\Activate.ps1 && uvicorn main:app --reload --host 0.0.0.0 --port 8000"
+start "Part Monitoring Backend" cmd /k "cd backend && venv\Scripts\activate.bat && uvicorn main:app --reload --host 0.0.0.0 --port 8000"
 
-REM Wait a second for backend to start
-timeout /t 2 /nobreak
+REM Wait a few seconds for backend to start
+timeout /t 4 /nobreak
 
 REM Start frontend in new window
 start "Part Monitoring Frontend" cmd /k "cd frontend && npm run dev"
