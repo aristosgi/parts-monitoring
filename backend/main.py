@@ -1,19 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine, SessionLocal
-from routers import parts, prices, activity, suppliers
-from models import Supplier
+from routers import inquiries, prices, activity, suppliers, statuses
+from models import Supplier, Status
 
-# Create all database tables on startup
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Part Numbers Monitoring API",
-    description="API for tracking part numbers and supplier prices",
-    version="1.0.0"
+    description="API for tracking inquiries, part numbers, and supplier prices",
+    version="2.1.0",
 )
 
-# Add CORS middleware (allow frontend on any port)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173",
@@ -25,23 +23,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(parts.router)
+app.include_router(inquiries.router)
 app.include_router(prices.router)
 app.include_router(activity.router)
 app.include_router(suppliers.router)
+app.include_router(statuses.router)
 
 
-# ============ Seed Suppliers on Startup ============
+DEFAULT_STATUSES = [
+    "Pending",
+    "Waiting for Order",
+    "Under Order",
+    "In Transit",
+    "Delivered",
+    "Cancelled",
+]
+
 
 @app.on_event("startup")
-async def seed_suppliers():
-    """Seed default suppliers on first startup."""
+async def seed_defaults():
     db = SessionLocal()
     try:
-        supplier_count = db.query(Supplier).count()
-        if supplier_count == 0:
-            defaults = [
+        if db.query(Supplier).count() == 0:
+            db.add_all([
                 Supplier(name="GR-Supplier-1", category="A"),
                 Supplier(name="GR-Supplier-2", category="A"),
                 Supplier(name="GR-Supplier-3", category="A"),
@@ -49,48 +53,42 @@ async def seed_suppliers():
                 Supplier(name="WEB-Supplier-A", category="B"),
                 Supplier(name="WEB-Supplier-B", category="B"),
                 Supplier(name="WEB-Supplier-C", category="B"),
-            ]
-            db.add_all(defaults)
-            db.commit()
+            ])
+
+        if db.query(Status).count() == 0:
+            rows = []
+            for scope in ("inquiry", "part"):
+                for order, name in enumerate(DEFAULT_STATUSES):
+                    rows.append(Status(name=name, scope=scope, display_order=order))
+            db.add_all(rows)
+
+        db.commit()
     finally:
         db.close()
 
-
-# ============ Static Data Endpoints ============
-
-ALLOWED_STATUSES = [
-    "Pending",
-    "Waiting for Order",
-    "Under Order",
-    "In Transit",
-    "Delivered",
-    "Cancelled"
-]
 
 INTERNAL_USERS = ["Simos", "Lenia", "Dimitris"]
 
 
 @app.get("/api/config")
 def get_config():
-    """Get static configuration."""
+    """Static config. Statuses live in DB — fetch via /api/statuses?scope=..."""
     return {
-        "statuses": ALLOWED_STATUSES,
         "users": INTERNAL_USERS,
-        "urgency_levels": [1, 2, 3, 4, 5]
+        "urgency_levels": [1, 2, 3, 4, 5],
+        "completed_statuses": ["Delivered", "Cancelled"],
+        "fallback_status": "Pending",
     }
 
 
 @app.get("/api/health")
 def health_check():
-    """Simple health check."""
     return {"status": "ok"}
 
 
 @app.get("/")
 def root():
-    """Root endpoint."""
     return {
         "message": "Part Numbers Monitoring API",
         "docs": "/docs",
-        "openapi": "/openapi.json"
     }

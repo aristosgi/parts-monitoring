@@ -1,210 +1,151 @@
 # Part Numbers Monitoring System
 
-A web application to track part numbers not in inventory and compare supplier prices. Built with React + FastAPI + SQLite.
+Track customer inquiries for parts not in inventory and compare supplier prices. React + FastAPI + SQLite.
+
+## Concept
+
+The system is organised around **inquiries**, not individual parts:
+
+- A customer/client makes an inquiry, which can include **one or many part numbers**.
+- Each inquiry has a client name, urgency, status, notes, and a list of parts.
+- Each part inside the inquiry has its own part number, description, quantity, urgency, status, and supplier prices.
+- This lets you search "what did Acme Corp ask about?" and see all their parts at once.
 
 ## Features
 
-- **User Management**: 3 internal users (Simos, Lenia, Dimitris) to track who logged actions
-- **Part Tracking**: Add and manage part numbers with:
-  - Requested by (client/customer name)
-  - Quantity (optional)
-  - Where it's used
-  - Urgency level (1-5)
-  - Status tracking
-- **Price Comparison**:
-  - In-country suppliers (Category A)
-  - Web/import suppliers (Category B)
-  - Compare prices side-by-side with separate modals per category
-  - Suppliers stored in SQLite database, not hardcoded
-- **Admin Panel**: Manage suppliers dynamically
-  - Add, edit, delete suppliers
-  - Toggle supplier active/inactive status
-  - Password protected (password: `123`)
-  - Separate management for in-country and web suppliers
-- **Activity Logging**: Full audit trail of all actions by user
-- **Filtering & Search**: Filter by requester, urgency, status, and search by part number/description
+- **User selection**: 3 internal users (Simos, Lenia, Dimitris) — every action is attributed.
+- **Inquiry-centric dashboard**: list of inquiries, with part-number chips inline. Click to open the full inquiry.
+- **Per-inquiry detail page**: edit inquiry info, add/remove parts, manage price comparison per part.
+- **Automatic timestamps**: every create/update/price action stamps the date server-side. No manual date entry.
+- **Price comparison**: two categories — In-Country (A) and Web/Import (B). Side-by-side prices per supplier.
+- **Admin panel**: manage the supplier list (password `123`, hardcoded for now).
+- **Activity log**: full audit trail across the system.
+- **Hard delete for completed orders**: when an inquiry reaches `Delivered` or `Cancelled` a prominent Delete button appears. You can also delete unfinished inquiries, but the confirmation modal warns you.
 
 ## Tech Stack
 
 - **Frontend**: React 18 + Vite + Tailwind CSS + React Query
 - **Backend**: FastAPI + SQLAlchemy + SQLite
-- **Data**: SQLite database (auto-created on startup)
+- **DB**: SQLite file `backend/part_numbers.db` (auto-created on startup, suppliers seeded)
 
-## Setup & Installation
+## Setup
 
-### Backend Setup
-
+### Backend
 ```bash
-cd part_numbers_monitoring/backend
-
-# Create virtual environment
+cd backend
 python -m venv venv
-
-# Activate (Windows)
-venv\Scripts\activate
-
-# Or (macOS/Linux)
-source venv/bin/activate
-
-# Install dependencies
+venv\Scripts\activate           # Windows
+# source venv/bin/activate      # macOS/Linux
 pip install -r requirements.txt
-
-# Run server (auto-creates database)
 uvicorn main:app --reload --port 8000
 ```
+Swagger docs: http://localhost:8000/docs
 
-Backend runs on: `http://localhost:8000`
-Swagger API docs: `http://localhost:8000/docs`
-
-### Frontend Setup
-
+### Frontend
 ```bash
-cd part_numbers_monitoring/frontend
-
-# Install dependencies
+cd frontend
 npm install
-
-# Run dev server
 npm run dev
 ```
-
-Frontend runs on: `http://localhost:5173`
-
-## Usage
-
-1. Open `http://localhost:5173` in your browser
-2. Select your user (Simos, Lenia, or Dimitris)
-3. **Dashboard**: View all parts, add new parts, filter by various criteria
-4. **Part Detail**: View/edit part info, add supplier prices, see activity log
-5. **Activity Log**: See all actions across the system
-
-## Project Structure
-
-```
-part_numbers_monitoring/
-├── backend/
-│   ├── main.py              # FastAPI app entry point
-│   ├── database.py          # SQLite setup
-│   ├── models.py            # SQLAlchemy models
-│   ├── schemas.py           # Pydantic schemas
-│   ├── crud.py              # Database operations
-│   ├── routers/
-│   │   ├── parts.py         # Part endpoints
-│   │   ├── prices.py        # Price endpoints
-│   │   ├── activity.py      # Activity log endpoints
-│   │   └── suppliers.py     # Supplier management endpoints (admin)
-│   ├── requirements.txt
-│   └── part_numbers.db      # Auto-created SQLite file (with suppliers table)
-│
-└── frontend/
-    ├── package.json
-    ├── vite.config.js
-    ├── index.html
-    └── src/
-        ├── pages/
-        │   ├── UserSelectPage.jsx
-        │   ├── DashboardPage.jsx
-        │   ├── PartDetailPage.jsx
-        │   ├── ActivityLogPage.jsx
-        │   └── AdminPage.jsx         # Admin panel (supplier management)
-        ├── components/
-        │   ├── layout/AppShell.jsx
-        │   └── common/
-        ├── context/UserContext.jsx
-        └── api/
-            ├── client.js
-            ├── parts.js
-            ├── prices.js
-            ├── activity.js
-            └── suppliers.js         # Supplier API calls
-```
+http://localhost:5173 — Vite proxies `/api` → backend on `:8000`.
 
 ## Database Schema
 
-### parts
-- id, part_number (unique), description, requested_by (client name)
-- quantity, used_in, urgency (1-5), status
-- logged_by (internal user), created_at, updated_at
+### `inquiries`
+- id, requested_by (client), notes, urgency (1-5), status, logged_by, created_at, updated_at
 
-### supplier_prices
-- id, part_id (FK), supplier_name, supplier_category ('A' or 'B')
-- price, currency, notes, date_checked, checked_by
-- UNIQUE(part_id, supplier_name)
+### `parts`
+- id, inquiry_id (FK, cascade delete), part_number, description, quantity, used_in, urgency, status, created_at, updated_at
 
-### activity_log
-- id, part_id (nullable), part_number, action_type
-- action_detail, performed_by, timestamp
+### `supplier_prices`
+- id, part_id (FK, cascade delete), supplier_name, supplier_category (A/B), price, currency, notes, date_checked (auto), checked_by, created_at, updated_at
+- UNIQUE(part_id, supplier_name) — one price entry per supplier per part
 
-## Suppliers (Hardcoded)
+### `suppliers`
+- id, name, category (A/B), is_active, created_at
 
-**Category A (In-Country):**
-- GR-Supplier-1, GR-Supplier-2, GR-Supplier-3, GR-Supplier-4
-
-**Category B (Web/Import):**
-- WEB-Supplier-A, WEB-Supplier-B, WEB-Supplier-C
-
-## Statuses
-
-- Pending
-- Waiting for Order
-- Under Order
-- In Transit
-- Delivered
-- Cancelled
+### `activity_log`
+- id, inquiry_id (nullable, SET NULL on delete), part_id (nullable), part_number, action_type, action_detail, performed_by, timestamp
+- Activity log survives inquiry/part deletion so you keep history.
 
 ## API Endpoints
 
-### Parts
-- `GET /api/parts` - List parts (with filters)
-- `POST /api/parts` - Create part
-- `GET /api/parts/{id}` - Get part detail
-- `PUT /api/parts/{id}` - Update part
-- `PATCH /api/parts/{id}/status` - Change status
-- `DELETE /api/parts/{id}` - Delete part
+### Inquiries
+- `GET /api/inquiries` — list (filters: search, logged_by, urgency, status)
+- `POST /api/inquiries` — create with parts in one call
+- `GET /api/inquiries/{id}` — full detail including all parts + prices
+- `PUT /api/inquiries/{id}` — update fields
+- `PATCH /api/inquiries/{id}/status` — change status
+- `DELETE /api/inquiries/{id}` — hard delete (cascades to parts + prices)
+
+### Parts (nested under inquiry)
+- `POST /api/inquiries/{inquiry_id}/parts` — add a part to an existing inquiry
+- `GET /api/parts/{id}` — single part
+- `PUT /api/parts/{id}` — update part fields
+- `PATCH /api/parts/{id}/status` — change part status
+- `DELETE /api/parts/{id}`
 
 ### Prices
-- `GET /api/prices/part/{part_id}` - Get all prices for a part
-- `POST /api/prices/part/{part_id}` - Add price
-- `PUT /api/prices/{price_id}` - Update price
-- `DELETE /api/prices/{price_id}` - Delete price
+- `GET /api/prices/part/{part_id}` — list prices for a part
+- `POST /api/prices/part/{part_id}` — add/upsert price (date auto-filled)
+- `PUT /api/prices/{price_id}` — update (date_checked refreshes automatically)
+- `DELETE /api/prices/{price_id}`
 
 ### Activity
-- `GET /api/activity` - Global activity log
-- `GET /api/activity/part/{part_id}` - Activity for a specific part
+- `GET /api/activity` — global log (filters: performed_by, action_type, limit)
+- `GET /api/activity/inquiry/{inquiry_id}` — log scoped to one inquiry
+
+### Suppliers
+- `GET /api/suppliers` — active suppliers (public)
+- `GET/POST/PUT/DELETE /api/admin/suppliers` — admin-only (`?admin_password=...`)
+- `POST /api/admin/login` — verify password
 
 ### Utilities
-- `GET /api/suppliers` - List hardcoded suppliers
-- `GET /api/config` - Get app configuration
-- `GET /api/health` - Health check
+- `GET /api/config` — statuses, users, urgency levels, completed_statuses
+- `GET /api/health`
 
-## Development Notes
-
-- **No authentication**: Users selected on login screen (no passwords)
-- **Activity tracking**: Every action logged with user and timestamp
-- **Auto-refresh**: Frontend uses React Query for automatic data syncing
-- **Vite Proxy**: `/api` requests automatically forward to backend during dev
-- **Database**: SQLite file created in `backend/` on first run
-
-## Building for Production
-
-```bash
-# Frontend build
-cd frontend
-npm run build
-# Creates dist/ folder with optimized bundle
+## Project Structure
+```
+part_numbers_monitoring/
+├── backend/
+│   ├── main.py
+│   ├── database.py
+│   ├── models.py            # Inquiry, Part, SupplierPrice, Supplier, ActivityLog
+│   ├── schemas.py
+│   ├── crud.py
+│   ├── routers/
+│   │   ├── inquiries.py     # Inquiry + nested Part endpoints
+│   │   ├── prices.py
+│   │   ├── activity.py
+│   │   └── suppliers.py
+│   ├── requirements.txt
+│   └── part_numbers.db
+└── frontend/
+    ├── package.json
+    ├── vite.config.js
+    └── src/
+        ├── pages/
+        │   ├── UserSelectPage.jsx
+        │   ├── DashboardPage.jsx       # Inquiries list + "New Inquiry" multi-part form
+        │   ├── InquiryDetailPage.jsx   # Inquiry view: parts, prices, activity, delete
+        │   ├── ActivityLogPage.jsx
+        │   └── AdminPage.jsx
+        ├── components/
+        ├── context/UserContext.jsx
+        └── api/
+            ├── client.js
+            ├── inquiries.js   # inquiriesAPI + partsAPI
+            ├── prices.js
+            ├── activity.js
+            └── suppliers.js
 ```
 
-## Troubleshooting
+## Statuses
+Pending · Waiting for Order · Under Order · In Transit · Delivered · Cancelled
 
-### Port already in use
-- Backend: Change port in `uvicorn main:app --reload --port 8001`
-- Frontend: Vite automatically finds next available port
+`Delivered` and `Cancelled` are considered "completed" — the Delete button is prominent on inquiries in those states (see `/api/config.completed_statuses`).
 
-### Database issues
-- Delete `backend/part_numbers.db` to reset database
-- Tables auto-recreate on next backend startup
-
-### CORS errors
-- Ensure both services are running
-- Backend on :8000, frontend on :5173
-- Check vite.config.js proxy settings
+## Notes
+- No authentication on the public app — user selected on login screen.
+- Admin password is hardcoded as `123` in [backend/routers/suppliers.py](backend/routers/suppliers.py). Fine for an internal LAN tool, not for anything exposed.
+- Reset the DB by deleting `backend/part_numbers.db` — tables and default suppliers auto-recreate on startup.

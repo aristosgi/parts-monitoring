@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { UserProvider, useUser } from './context/UserContext'
 import UserSelectPage from './pages/UserSelectPage'
 import DashboardPage from './pages/DashboardPage'
-import PartDetailPage from './pages/PartDetailPage'
+import InquiryDetailPage from './pages/InquiryDetailPage'
 import ActivityLogPage from './pages/ActivityLogPage'
 import AdminPage from './pages/AdminPage'
 
@@ -17,7 +17,7 @@ function ProtectedRoutes() {
   return (
     <Routes>
       <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/parts/:id" element={<PartDetailPage />} />
+      <Route path="/inquiries/:id" element={<InquiryDetailPage />} />
       <Route path="/activity" element={<ActivityLogPage />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
