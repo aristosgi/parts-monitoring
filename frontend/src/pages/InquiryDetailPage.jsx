@@ -124,8 +124,8 @@ export default function InquiryDetailPage() {
   // ===== Part actions =====
 
   const handleAddPart = async () => {
-    if (!newPart.part_number.trim() || !newPart.description.trim()) {
-      alert('Part number and description required')
+    if (!newPart.part_number.trim()) {
+      alert('Part number is required')
       return
     }
     try {
@@ -134,9 +134,10 @@ export default function InquiryDetailPage() {
         {
           ...newPart,
           part_number: newPart.part_number.trim(),
-          description: newPart.description.trim(),
+          description: newPart.description.trim() || null,
+          used_in: newPart.used_in.trim() || null,
           quantity: newPart.quantity ? parseInt(newPart.quantity) : null,
-          urgency: parseInt(newPart.urgency),
+          urgency: newPart.urgency ? parseInt(newPart.urgency) : null,
         },
         currentUser,
       )
@@ -164,7 +165,7 @@ export default function InquiryDetailPage() {
         quantity: partEditData.quantity !== '' && partEditData.quantity !== null
           ? parseInt(partEditData.quantity)
           : null,
-        urgency: partEditData.urgency ? parseInt(partEditData.urgency) : undefined,
+        urgency: partEditData.urgency ? parseInt(partEditData.urgency) : null,
       }
       await partsAPI.update(partId, data, currentUser)
       refreshAll()
@@ -356,10 +357,11 @@ export default function InquiryDetailPage() {
                   <div>
                     <label className="text-xs text-slate-500">Urgency</label>
                     <select
-                      value={editData.urgency || 3}
-                      onChange={(e) => setEditData({ ...editData, urgency: parseInt(e.target.value) })}
+                      value={editData.urgency ?? ''}
+                      onChange={(e) => setEditData({ ...editData, urgency: e.target.value === '' ? null : parseInt(e.target.value) })}
                       className="w-full px-3 py-2 border border-slate-300 rounded mt-1"
                     >
+                      <option value="">— None —</option>
                       <option value="1">Low (1)</option>
                       <option value="2">Medium (2)</option>
                       <option value="3">High (3)</option>
@@ -511,7 +513,7 @@ export default function InquiryDetailPage() {
                   type="text"
                   value={newPart.description}
                   onChange={(e) => setNewPart({ ...newPart, description: e.target.value })}
-                  placeholder="Description *"
+                  placeholder="Description"
                   className="px-3 py-2 border border-slate-300 rounded text-sm"
                 />
                 <input
@@ -533,6 +535,7 @@ export default function InquiryDetailPage() {
                   onChange={(e) => setNewPart({ ...newPart, urgency: e.target.value })}
                   className="px-3 py-2 border border-slate-300 rounded text-sm"
                 >
+                  <option value="">Urgency: — None —</option>
                   <option value="1">Urgency: Low (1)</option>
                   <option value="2">Urgency: Medium (2)</option>
                   <option value="3">Urgency: High (3)</option>
@@ -734,10 +737,11 @@ function PartCard({
                 placeholder="Used in"
               />
               <select
-                value={partEditData.urgency || 3}
-                onChange={(e) => setPartEditData({ ...partEditData, urgency: parseInt(e.target.value) })}
+                value={partEditData.urgency ?? ''}
+                onChange={(e) => setPartEditData({ ...partEditData, urgency: e.target.value === '' ? null : parseInt(e.target.value) })}
                 className="px-3 py-2 border border-slate-300 rounded text-sm"
               >
+                <option value="">Urgency: — None —</option>
                 <option value="1">Urgency: Low (1)</option>
                 <option value="2">Urgency: Medium (2)</option>
                 <option value="3">Urgency: High (3)</option>
@@ -748,7 +752,7 @@ function PartCard({
           ) : (
             <>
               <p className="font-bold text-lg text-slate-900">{part.part_number}</p>
-              <p className="text-sm text-slate-700">{part.description}</p>
+              {part.description && <p className="text-sm text-slate-700">{part.description}</p>}
               <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-600">
                 {part.quantity != null && <span>Qty: <strong>{part.quantity}</strong></span>}
                 {part.used_in && <span>Used in: <strong>{part.used_in}</strong></span>}

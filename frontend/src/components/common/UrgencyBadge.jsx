@@ -15,6 +15,8 @@ export default function UrgencyBadge({ urgency }) {
     5: 'Critical',
   }
 
+  if (urgency == null) return null
+
   return (
     <span className={`px-3 py-1 rounded-full text-sm font-semibold ${urgencyColors[urgency] || urgencyColors[3]}`}>
       {urgencyLabels[urgency] || 'Unknown'} ({urgency})

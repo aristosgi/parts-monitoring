@@ -45,7 +45,7 @@ class Inquiry(Base):
     id = Column(Integer, primary_key=True, index=True)
     requested_by = Column(String, nullable=False, index=True)  # Client/customer name
     notes = Column(Text, nullable=True)
-    urgency = Column(Integer, nullable=False)  # 1-5, overall inquiry urgency
+    urgency = Column(Integer, nullable=True)  # 1-5, overall inquiry urgency (optional)
     status = Column(String, default="Pending", nullable=False)
     logged_by = Column(String, nullable=False)  # Internal user
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -61,10 +61,10 @@ class Part(Base):
     id = Column(Integer, primary_key=True, index=True)
     inquiry_id = Column(Integer, ForeignKey("inquiries.id", ondelete="CASCADE"), nullable=False, index=True)
     part_number = Column(String, nullable=False, index=True)
-    description = Column(String, nullable=False)
+    description = Column(String, nullable=True)
     quantity = Column(Integer, nullable=True)
     used_in = Column(String, nullable=True)
-    urgency = Column(Integer, nullable=False)  # 1-5, per-part
+    urgency = Column(Integer, nullable=True)  # 1-5, per-part (optional)
     status = Column(String, default="Pending", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

@@ -96,10 +96,10 @@ class PricingRuleResponse(BaseModel):
 
 class PartBase(BaseModel):
     part_number: str
-    description: str
+    description: Optional[str] = None
     quantity: Optional[int] = None
     used_in: Optional[str] = None
-    urgency: int  # 1-5
+    urgency: Optional[int] = None  # 1-5 (optional)
     status: str = "Pending"
 
 
@@ -139,7 +139,7 @@ class PartResponse(PartBase):
 class InquiryBase(BaseModel):
     requested_by: str
     notes: Optional[str] = None
-    urgency: int  # 1-5
+    urgency: Optional[int] = None  # 1-5 (optional)
     status: str = "Pending"
 
 
@@ -163,7 +163,7 @@ class InquiryListItem(BaseModel):
     """Compact summary for the dashboard list."""
     id: int
     requested_by: str
-    urgency: int
+    urgency: Optional[int] = None
     status: str
     logged_by: str
     created_at: datetime

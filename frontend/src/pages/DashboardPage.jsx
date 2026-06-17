@@ -97,17 +97,18 @@ export default function DashboardPage() {
       return
     }
     const cleanParts = newInquiry.parts
-      .filter((p) => p.part_number.trim() && p.description.trim())
+      .filter((p) => p.part_number.trim())
       .map((p) => ({
         ...p,
         part_number: p.part_number.trim(),
-        description: p.description.trim(),
+        description: p.description.trim() || null,
+        used_in: p.used_in.trim() || null,
         quantity: p.quantity ? parseInt(p.quantity) : null,
-        urgency: parseInt(p.urgency),
+        urgency: p.urgency ? parseInt(p.urgency) : null,
       }))
 
     if (cleanParts.length === 0) {
-      alert('Add at least one part with a part number and description')
+      alert('Add at least one part with a part number')
       return
     }
 
@@ -115,7 +116,7 @@ export default function DashboardPage() {
       await inquiriesAPI.create({
         requested_by: newInquiry.requested_by.trim(),
         notes: newInquiry.notes.trim() || null,
-        urgency: parseInt(newInquiry.urgency),
+        urgency: newInquiry.urgency ? parseInt(newInquiry.urgency) : null,
         status: newInquiry.status,
         logged_by: currentUser,
         parts: cleanParts,
@@ -276,12 +277,13 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Urgency (1-5)</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Urgency (optional)</label>
                   <select
                     value={newInquiry.urgency}
                     onChange={(e) => setNewInquiry({ ...newInquiry, urgency: e.target.value })}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400"
                   >
+                    <option value="">— None —</option>
                     <option value="1">Low (1)</option>
                     <option value="2">Medium (2)</option>
                     <option value="3">High (3)</option>
@@ -354,7 +356,7 @@ export default function DashboardPage() {
                           type="text"
                           value={part.description}
                           onChange={(e) => updatePartField(idx, 'description', e.target.value)}
-                          placeholder="Description *"
+                          placeholder="Description"
                           className="px-3 py-2 border border-slate-300 rounded text-sm"
                         />
                         <input
@@ -376,6 +378,7 @@ export default function DashboardPage() {
                           onChange={(e) => updatePartField(idx, 'urgency', e.target.value)}
                           className="px-3 py-2 border border-slate-300 rounded text-sm"
                         >
+                          <option value="">Urgency: — None —</option>
                           <option value="1">Urgency: Low (1)</option>
                           <option value="2">Urgency: Medium (2)</option>
                           <option value="3">Urgency: High (3)</option>
