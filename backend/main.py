@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine, SessionLocal
-from routers import inquiries, prices, activity, suppliers, statuses
-from models import Supplier, Status
+from routers import inquiries, prices, activity, suppliers, statuses, pricing_rules
+from models import Supplier, Status, PricingRule
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,6 +28,7 @@ app.include_router(prices.router)
 app.include_router(activity.router)
 app.include_router(suppliers.router)
 app.include_router(statuses.router)
+app.include_router(pricing_rules.router)
 
 
 DEFAULT_STATUSES = [
@@ -37,6 +38,14 @@ DEFAULT_STATUSES = [
     "In Transit",
     "Delivered",
     "Cancelled",
+]
+
+# (min_price, max_price, multiplier) — max_price None = no upper bound
+DEFAULT_PRICING_RULES = [
+    (0, 1, 3.0),
+    (1, 30, 2.5),
+    (30, 100, 2.0),
+    (100, None, 1.5),
 ]
 
 
@@ -61,6 +70,12 @@ async def seed_defaults():
                 for order, name in enumerate(DEFAULT_STATUSES):
                     rows.append(Status(name=name, scope=scope, display_order=order))
             db.add_all(rows)
+
+        if db.query(PricingRule).count() == 0:
+            db.add_all([
+                PricingRule(min_price=mn, max_price=mx, multiplier=mult, display_order=order)
+                for order, (mn, mx, mult) in enumerate(DEFAULT_PRICING_RULES)
+            ])
 
         db.commit()
     finally:

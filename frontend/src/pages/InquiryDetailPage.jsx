@@ -788,6 +788,19 @@ function PartCard({
         )}
       </div>
 
+      {part.suggested_price != null ? (
+        <div className="px-5 py-3 bg-emerald-50 border-b border-emerald-100 text-sm">
+          Suggested price: <strong>{part.suggested_price.toFixed(2)} EUR</strong>
+          <span className="text-slate-500 ml-2">
+            (best {part.best_price?.toFixed(2)} € × {part.applied_multiplier})
+          </span>
+        </div>
+      ) : part.best_price != null ? (
+        <div className="px-5 py-3 bg-amber-50 border-b border-amber-100 text-sm text-amber-800">
+          Best EUR price {part.best_price.toFixed(2)} € — no matching pricing band configured.
+        </div>
+      ) : null}
+
       <PriceTable
         title="In-Country Suppliers (Category A)"
         category="A"

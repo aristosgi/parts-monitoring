@@ -1,13 +1,14 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from datetime import datetime
-from models import Inquiry, Part, SupplierPrice, ActivityLog, Supplier, Status
+from models import Inquiry, Part, SupplierPrice, ActivityLog, Supplier, Status, PricingRule
 from schemas import (
     InquiryCreate, InquiryUpdate,
     PartCreate, PartUpdate,
     SupplierPriceCreate, SupplierPriceUpdate,
     SupplierCreate, SupplierUpdate,
     StatusCreate, StatusUpdate,
+    PricingRuleCreate, PricingRuleUpdate,
 )
 
 FALLBACK_STATUS = "Pending"
@@ -435,3 +436,62 @@ def delete_status(db: Session, status_id: int) -> tuple[bool, int]:
     db.delete(db_status)
     db.commit()
     return True, reset_count
+
+
+# ============ Pricing Rule CRUD ============
+
+def get_pricing_rules(db: Session, active_only: bool = True) -> list:
+    query = db.query(PricingRule)
+    if active_only:
+        query = query.filter(PricingRule.is_active == True)
+    return query.order_by(PricingRule.display_order, PricingRule.min_price).all()
+
+
+def get_pricing_rule(db: Session, rule_id: int) -> PricingRule:
+    return db.query(PricingRule).filter(PricingRule.id == rule_id).first()
+
+
+def create_pricing_rule(db: Session, payload: PricingRuleCreate) -> PricingRule:
+    db_rule = PricingRule(**payload.model_dump())
+    db.add(db_rule)
+    db.commit()
+    db.refresh(db_rule)
+    return db_rule
+
+
+def update_pricing_rule(db: Session, rule_id: int, payload: PricingRuleUpdate) -> PricingRule:
+    db_rule = get_pricing_rule(db, rule_id)
+    if not db_rule:
+        return None
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(db_rule, field, value)
+    db.commit()
+    db.refresh(db_rule)
+    return db_rule
+
+
+def delete_pricing_rule(db: Session, rule_id: int) -> bool:
+    db_rule = get_pricing_rule(db, rule_id)
+    if not db_rule:
+        return False
+    db.delete(db_rule)
+    db.commit()
+    return True
+
+
+def compute_suggested_price(part, rules):
+    """Returns (best_price, multiplier, suggested) or (None, None, None).
+
+    best_price = lowest EUR supplier price; rule match:
+    min_price <= best AND (max_price is None OR best < max_price).
+    """
+    eur = [p.price for p in part.supplier_prices if p.price is not None and p.currency == "EUR"]
+    if not eur:
+        return None, None, None
+    best = min(eur)
+    for r in sorted(rules, key=lambda r: r.display_order):
+        if not r.is_active:
+            continue
+        if best >= r.min_price and (r.max_price is None or best < r.max_price):
+            return best, r.multiplier, round(best * r.multiplier, 2)
+    return best, None, None   # no band matched → expose best_price but no suggestion

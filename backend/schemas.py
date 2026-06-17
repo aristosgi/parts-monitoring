@@ -62,6 +62,36 @@ class StatusDeleteResult(BaseModel):
     reset_count: int  # how many rows were reset to "Pending"
 
 
+# ============ Pricing Rule Schemas ============
+
+class PricingRuleCreate(BaseModel):
+    min_price: float
+    max_price: Optional[float] = None
+    multiplier: float
+    display_order: Optional[int] = 0
+
+
+class PricingRuleUpdate(BaseModel):
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    multiplier: Optional[float] = None
+    is_active: Optional[bool] = None
+    display_order: Optional[int] = None
+
+
+class PricingRuleResponse(BaseModel):
+    id: int
+    min_price: float
+    max_price: Optional[float] = None
+    multiplier: float
+    is_active: bool
+    display_order: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # ============ Part Schemas ============
 
 class PartBase(BaseModel):
@@ -96,6 +126,9 @@ class PartResponse(PartBase):
     created_at: datetime
     updated_at: datetime
     supplier_prices: List["SupplierPriceResponse"] = []
+    best_price: Optional[float] = None         # lowest EUR supplier price
+    applied_multiplier: Optional[float] = None
+    suggested_price: Optional[float] = None
 
     class Config:
         from_attributes = True

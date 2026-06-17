@@ -10,9 +10,20 @@ from crud import (
     create_inquiry, get_inquiry, list_inquiries, update_inquiry,
     update_inquiry_status, delete_inquiry,
     add_part_to_inquiry, get_part, update_part, update_part_status, delete_part,
+    get_pricing_rules, compute_suggested_price,
 )
 
 router = APIRouter(tags=["inquiries"])
+
+
+def _part_with_suggestion(part, rules) -> PartResponse:
+    """Build a PartResponse with the computed suggested-price fields."""
+    resp = PartResponse.model_validate(part)
+    best, multiplier, suggested = compute_suggested_price(part, rules)
+    resp.best_price = best
+    resp.applied_multiplier = multiplier
+    resp.suggested_price = suggested
+    return resp
 
 
 # ============ Inquiry endpoints ============
@@ -65,7 +76,10 @@ def get_inquiry_detail(inquiry_id: int, db: Session = Depends(get_db)):
     db_inquiry = get_inquiry(db, inquiry_id)
     if not db_inquiry:
         raise HTTPException(status_code=404, detail="Inquiry not found")
-    return db_inquiry
+    rules = get_pricing_rules(db, active_only=True)
+    resp = InquiryDetailResponse.model_validate(db_inquiry)
+    resp.parts = [_part_with_suggestion(p, rules) for p in db_inquiry.parts]
+    return resp
 
 
 @router.put("/api/inquiries/{inquiry_id}", response_model=InquiryDetailResponse)
@@ -130,7 +144,8 @@ def get_part_detail(part_id: int, db: Session = Depends(get_db)):
     db_part = get_part(db, part_id)
     if not db_part:
         raise HTTPException(status_code=404, detail="Part not found")
-    return db_part
+    rules = get_pricing_rules(db, active_only=True)
+    return _part_with_suggestion(db_part, rules)
 
 
 @router.put("/api/parts/{part_id}", response_model=PartResponse)

@@ -27,6 +27,18 @@ class Status(Base):
     __table_args__ = (UniqueConstraint("name", "scope", name="unique_status_per_scope"),)
 
 
+class PricingRule(Base):
+    __tablename__ = "pricing_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    min_price = Column(Float, nullable=False)          # inclusive lower bound (EUR)
+    max_price = Column(Float, nullable=True)           # exclusive upper bound; NULL = no upper limit
+    multiplier = Column(Float, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    display_order = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class Inquiry(Base):
     __tablename__ = "inquiries"
 
